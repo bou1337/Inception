@@ -10,9 +10,18 @@ services:
     depends_on:
       - wordpress
     ports:
-      -"443:443"
+      - "443:443"
     volumes:
-      -data:/var/www/html
-    
-
-
+      - data_file:/var/www/html
+  wordpress:
+    container_name: wordpress
+    build: 
+      context: requirements/wordpress
+      dockerfile: 
+      expose:
+        "9000"
+      network:
+        - Inception-net 
+    volumes:
+      - data_file:/var/www/html
+      
