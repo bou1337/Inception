@@ -39,3 +39,22 @@ services:
     networks:
       - inception
     restart: always
+
+networks:
+  inception:
+    driver: bridge 
+volumes:
+  wordpress:
+    driver: local 
+    depends_opts:
+      type: none 
+      o: bind
+      device : /home/iait-bou/data/wordpress_files
+  database:
+    driver: local 
+    driver_opts:
+      type:none
+      o:bind 
+      device:/home/iait-bou/data/mariadb_data
+  
+      
