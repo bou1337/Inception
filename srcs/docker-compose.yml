@@ -1,33 +1,41 @@
-version: '3.8'
+
 services:
   nginx:
-    container_name: ngix 
-    build:
-      context: ./requirements/ngix
-      image: nginx
-    networks:
-      - Inception-net 
+    container_name: nginx
+    build: ./requirements/nginx/.
+    image: nginx
+    ports:
+     - "443:443"
     depends_on:
       - wordpress
-    ports:
-      - "443:443"
     volumes:
-      - data_file:/var/www/html
+     - wordpress:/var/www/html
+    networks:
+      - inception
+    env_file:
+      - .env
     restart: always
   wordpress:
     container_name: wordpress
-    build: 
-      context: requirements/wordpress
-      image: wordpress 
-      expose:
-        "9000"
-      network:
-        - Inception-net 
-    volumes:
-      - data_file:/var/www/html
-    networks:
-      - Inception
+    build: ./requirements/wordpress/.
+    image: wordpress
     depends_on:
       - mariadb
+    volumes:
+      - wordpress:/var/www/html
+    env_file:
+      - .env
+    networks:
+      - inception
     restart: always
-  
+  mariadb:
+    container_name: mariadb
+    build: ./requirements/mariadb/.
+    image: mariadb
+    volumes:
+      - mariadb:/var/lib/mysql
+    env_file:
+      - .env
+    networks:
+      - inception
+    restart: always
