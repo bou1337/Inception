@@ -4,7 +4,7 @@ services:
     container_name: ngix 
     build:
       context: ./requirements/ngix
-      dockerfile: dockerfile 
+      image: nginx
     networks:
       - Inception-net 
     depends_on:
@@ -13,15 +13,21 @@ services:
       - "443:443"
     volumes:
       - data_file:/var/www/html
+    restart: always
   wordpress:
     container_name: wordpress
     build: 
       context: requirements/wordpress
-      dockerfile: 
+      image: wordpress 
       expose:
         "9000"
       network:
         - Inception-net 
     volumes:
       - data_file:/var/www/html
-      
+    networks:
+      - Inception
+    depends_on:
+      - mariadb
+    restart: always
+  
