@@ -53,8 +53,8 @@ volumes:
   database:
     driver: local 
     driver_opts:
-      type:none
-      o:bind 
-      device:/home/iait-bou/data/mariadb_data
+      type: none
+      o: bind 
+      device: /home/iait-bou/data/mariadb_data
   
       
