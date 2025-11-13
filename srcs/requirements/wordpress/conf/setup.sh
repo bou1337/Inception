@@ -4,25 +4,40 @@ set -e
 # Wait for MariaDB to be ready
 sleep 10
 
-# Download WordPress core
-wp core download --allow-root
+# --- START: Conditional Installation Block ---
 
-# Create wp-config.php
-wp config create --allow-root \
-  --dbname=$SQL_DATABASE \
-  --dbuser=$SQL_USER \
-  --dbpass=$SQL_PASSWORD \
-  --dbhost=mariadb:3306
+# Check if wp-config.php exists. If it does, WordPress is already installed.
+if [ ! -f "/var/www/html/wordpress/wp-config.php" ]; then
+    echo "wp-config.php not found. Running initial WordPress setup."
 
-# Install WordPress
-wp core install --allow-root \
-  --url=$WP_URL \
-  --title=$WP_TITLE \
-  --admin_user=$WP_ADMIN_USER \
-  --admin_password=$WP_ADMIN_PASSWORD \
-  --admin_email=$WP_ADMIN_EMAIL
+    # Download WordPress core
+    wp core download --allow-root
 
-# Create a secondary user
-wp user create $WP_USER $WP_EMAIL --user_pass=$WP_PASSWORD --allow-root
+    # Create wp-config.php
+    wp config create --allow-root \
+      --dbname=$SQL_DATABASE \
+      --dbuser=$SQL_USER \
+      --dbpass=$SQL_PASSWORD \
+      --dbhost=mariadb:3306
 
-php-fpm7.4 -F
+    # Install WordPress
+    wp core install --allow-root \
+      --url=$WP_URL \
+      --title=$WP_TITLE \
+      --admin_user=$WP_ADMIN_USER \
+      --admin_password=$WP_ADMIN_PASSWORD \
+      --admin_email=$WP_ADMIN_EMAIL
+
+    # Create a secondary user
+    wp user create $WP_USER $WP_EMAIL --user_pass=$WP_PASSWORD --allow-root
+    
+    echo "WordPress setup complete."
+else
+    echo "wp-config.php found. Skipping initial WordPress setup."
+fi
+
+# --- END: Conditional Installation Block ---
+
+# This command must run unconditionally to keep the container alive
+echo "Starting PHP-FPM..."
+exec php-fpm7.4 -F
