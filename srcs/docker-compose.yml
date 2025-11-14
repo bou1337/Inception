@@ -1,61 +1,58 @@
 services:
   nginx:
+    build: ./requirements/nginx
     container_name: nginx
-    build: ./requirements/nginx/.
-    image: nginx
-    ports:
-      - "443:443"
     depends_on:
       - wordpress
     volumes:
       - wordpress:/var/www/html
     networks:
       - inception
+    ports:
+      - "443:443"
     env_file:
       - .env
     restart: always
 
   wordpress:
-    container_name: wordpress
-    build: ./requirements/wordpress/.
-    image: wordpress
+    build: ./requirements/wordpress
+    container_name:  wordpress
     depends_on:
       - mariadb
     volumes:
       - wordpress:/var/www/html
-    env_file:
-      - .env
     networks:
       - inception
+    env_file:
+      - .env
     restart: always
 
   mariadb:
+    build: ./requirements/mariadb
     container_name: mariadb
-    build: ./requirements/mariadb/.
-    image: mariadb
     volumes:
       - mariadb:/var/lib/mysql
-    env_file:
-      - .env
     networks:
       - inception
+    env_file:
+      - .env
     restart: always
-
-networks:
-  inception:
-    driver: bridge
 
 volumes:
   wordpress:
     driver: local
-    driver_opts:          
+    driver_opts:
       type: none
       o: bind
-      device: /home/iait-bou/data/wordpress_files
+      device: /home/iait-bou/data/wordpress
 
   mariadb:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/iait-bou/data/mariadb_data
+      device: /home/iait-bou/data/mariadb
+
+networks:
+  inception:
+    driver: bridge

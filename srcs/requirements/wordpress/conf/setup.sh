@@ -1,43 +1,48 @@
 #!/bin/bash
+# Using /bin/bash is generally safer for complex scripts than /bin/sh
+
 set -e
+# Trap EXIT or TERM to ensure proper exit code handling
+trap 'exit' TERM
 
-# Wait for MariaDB to be ready
-sleep 10
+# 1. Wait for MariaDB to be ready
+echo "Waiting for MariaDB at $DB_HOST..."
+until mariadb-admin ping -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" --silent; do
+  sleep 2
+done
+echo "MariaDB is ready."
 
-# --- START: Conditional Installation Block ---
+# 2. WordPress Setup (only runs on first boot)
+WORDPRESS_DIR="/var/www/html/wordpress"
+mkdir -p "$WORDPRESS_DIR"
+cd "$WORDPRESS_DIR"
 
-# Check if wp-config.php exists. If it does, WordPress is already installed.
-if [ ! -f "/var/www/html/wordpress/wp-config.php" ]; then
-    echo "wp-config.php not found. Running initial WordPress setup."
-
-    # Download WordPress core
-    wp core download --allow-root
-
-    # Create wp-config.php
-    wp config create --allow-root \
-      --dbname=$SQL_DATABASE \
-      --dbuser=$SQL_USER \
-      --dbpass=$SQL_PASSWORD \
-      --dbhost=mariadb:3306
-
-    # Install WordPress
-    wp core install --allow-root \
-      --url=$WP_URL \
-      --title=$WP_TITLE \
-      --admin_user=$WP_ADMIN_USER \
-      --admin_password=$WP_ADMIN_PASSWORD \
-      --admin_email=$WP_ADMIN_EMAIL
-
-    # Create a secondary user
-    wp user create $WP_USER $WP_EMAIL --user_pass=$WP_PASSWORD --allow-root
+if [ ! -f "wp-config.php" ]; then
+    echo "Starting WordPress initial setup..."
+    # Clean up any potential previous files if wp-config.php is missing
+    rm -rf ./*
     
+    # Download core, config, and install
+    wp core download --allow-root
+    wp config create --allow-root --dbname="$DB_NAME" \
+        --dbuser="$DB_USER" --dbpass="$DB_PASSWORD" --dbhost="$DB_HOST"
+
+    wp core install --allow-root \
+        --url="$WP_URL" \
+        --title="$WP_TITLE" \
+        --admin_user="$WP_ADMIN_USER" \
+        --admin_password="$WP_ADMIN_PASSWORD" \
+        --admin_email="$WP_ADMIN_EMAIL"
+
+    # Create standard user
+    wp user create --allow-root "$WP_USER" "$WP_EMAIL" \
+            --user_pass="$WP_PASSWORD" --role=editor
+
+    wp theme activate twentytwentythree --allow-root 
     echo "WordPress setup complete."
-else
-    echo "wp-config.php found. Skipping initial WordPress setup."
 fi
 
-# --- END: Conditional Installation Block ---
-
-# This command must run unconditionally to keep the container alive
+# 3. Start PHP-FPM in the foreground
 echo "Starting PHP-FPM..."
-exec php-fpm7.4 -F
+mkdir -p /run/php
+exec /usr/sbin/php-fpm7.4 -F
