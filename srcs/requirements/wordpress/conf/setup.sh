@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-trap 'exit' TERM
 
 echo "Waiting for MariaDB at $DB_HOST..."
 until mariadb-admin ping -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" --silent; do
